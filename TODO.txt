@@ -1,0 +1,126 @@
+Feature list in planning/development
+====================================
+
+Detect cyclic reference - DONE!
+-------------------------------
+Container should detect a cyclic reference between components. For example:
+
+    A depends_on B depends_on C depends_on A
+
+During setup phase, the container should abort with a message state:
+
+    Cyclic reference detected: A -> B -> C -> A
+
+* Note: Two new exception should be introduced:
+    - InitializationException - raised during initialization phase.
+    - ComponentInitException (inherits from InitializationException) - raised by components if they would like
+      to indicate some sort of error during initialization.
+    - FactoryInitException (inherits from InitializationException) - raised by factories during initialization state
+      to indicate initialization failure.
+
+Support for injected lists, sets and dictionary
+-----------------------------------------------
+Injection should be extended to support also lists, sets and dictionaries. For example,
+Having the following components:
+
+    class Car(ABC)
+        pass
+
+    class Porsche(Parent)
+        pass
+
+    class Ferrari(Parent)
+        pass
+
+    container.register(Porsche, Ferrari)
+
+Having the following class definition:
+
+    class SomeService:
+
+        def __init__(self, cars: List[Car])
+            pass
+
+
+Will inject a list of [Porsche(), Ferrari()] into 'cars' parameter. Same goes with 'set'.
+
+If the collection is of type 'Dict':
+
+    class SomeService:
+
+        def __init__(self, cars: Dict[str, Car]):
+            pass
+
+Then a dictionary with components name and objects will be injected { "porsche": Porsche(), "ferrari": Ferrari() }
+The dictionary must be of the foru, Dict[str, T]. If the dictionary is of simple type (i.e.: {} or dict()), than
+all components are provided.
+
+If the item is an iterable is neither of the supported types, then it is treated as a list.
+
+
+Add support for registering a factory manually
+----------------------------------------------
+Container should have a new method to register factory, e.g.:
+
+    class Container:
+
+        def register(self, name: str, factory: ComponentFactory):
+            ...
+
+Add support for registering multiple anonymous classes - DONE !
+---------------------------------------------------------------
+Container should support registering multiple anonymous components:
+
+    class Container:
+
+        def register_all(self, *args):
+            ...
+
+Usage example:
+
+    container.register_all(Porsche, Ferrari, .....)
+
+
+Add support for setter injection
+--------------------------------
+Add support for injecting values via a setter, e.g.:
+
+    class SomeService:
+
+        @inject
+        def set_printer(self, printer: Printer):
+            ...
+
+        @inject()
+        def set_fs_implementation(self, fs: FileSystem):
+            ...
+
+        @inject(type=MailNotificationService)
+        def set_notification_service(self, service: NotificationService):
+            ...
+
+        @inject(name="ninja_template_service")
+        def set_template_service(self, service: TemplateService):
+            ...
+
+The inject takes several forms:
+
+    - @inject or @inject() -- same behavior.
+    - @inject(type=<type>) - Inject of specific type.
+    - @inject(name=<str>) - Inject a component of a given name.
+    - @inject(Union[str,type]) - The injector will attempt to detect whether it's a component name or type.
+
+
+Add logs
+--------
+Add logs to the framework.
+
+
+Add README and reference
+------------------------
+Update README.md file and add docs/* directory with reference documentation
+
+Add "depends_on" decorator
+--------------------------
+Add a new decorator to support a dependencies between components even though there is no direct dependency in
+the tree.
